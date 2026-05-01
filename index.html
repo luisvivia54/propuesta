@@ -135,7 +135,7 @@ body {
 }
 .cta-layer h2 {
   font-family: 'Outfit', sans-serif;
-  font-size: clamp(2.2rem, 5vw, 5rem);
+  font-size: clamp(1.8rem, 5vw, 5rem);
   font-weight: 900; line-height: 1.0;
   margin-bottom: 1rem; letter-spacing: -0.025em;
 }
@@ -179,6 +179,9 @@ body {
   width: 88vw; height: 86vh;
   border-radius: 36px;
 }
+@media (max-width:768px) {
+  .main-card { width: 93vw; height: 84vh; border-radius: 24px; }
+}
 
 /* Card interior layout */
 .card-inner {
@@ -189,13 +192,25 @@ body {
   align-items: center;
   padding: 3rem 2.5rem;
   gap: 2rem;
+  overflow: hidden;
 }
 @media (max-width:900px) {
-  .card-inner { grid-template-columns:1fr; grid-template-rows:auto 1fr auto; padding:2rem 1.5rem; }
+  .card-inner {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    padding: 1.5rem 1rem;
+    gap: 1rem;
+    align-items: flex-start;
+    overflow-y: auto;
+  }
 }
 
 /* Card left */
 .card-left { display:flex; flex-direction:column; justify-content:center; }
+@media (max-width:900px) {
+  .card-left { display:none; }
+  .card-right { display:none; }
+}
 .card-left h3 {
   font-family:'Outfit',sans-serif; font-size:clamp(1.4rem,2.5vw,2.2rem);
   font-weight:800; line-height:1.15; margin-bottom:1.2rem;
@@ -233,6 +248,9 @@ body {
   position:relative; height:100%; max-height:520px;
   display:flex; align-items:center; justify-content:center;
   transform-style:preserve-3d;
+}
+@media (max-width:900px) {
+  .dash-wrap { max-height:100%; height:auto; padding:0.5rem 0; }
 }
 .dash-frame {
   width:100%; max-width:340px;
@@ -286,6 +304,7 @@ body {
   box-shadow:0 0 0 1px rgba(255,255,255,0.08),0 20px 40px -8px rgba(0,0,0,0.8),inset 0 1px 1px rgba(255,255,255,0.15),inset 0 -1px 1px rgba(0,0,0,0.5);
   pointer-events:none;
 }
+@media (max-width:900px) { .float-badge { display:none; } }
 .float-badge-icon {
   width:36px; height:36px; border-radius:10px;
   display:flex; align-items:center; justify-content:center;
@@ -843,75 +862,73 @@ intro
 
 /* ── PINNED SCROLL TIMELINE ── */
 const isMobile = window.innerWidth < 768;
+const scrollDist = isMobile ? 2800 : 6500;
+const holdDur   = isMobile ? 0.8  : 2.8;
+const scrubVal  = isMobile ? 0.7  : 1.1;
 
 const tl = gsap.timeline({
   scrollTrigger: {
     trigger: '#stage',
     start: 'top top',
-    end: '+=6500',
+    end: '+=' + scrollDist,
     pin: true,
-    scrub: 1.1,
+    scrub: scrubVal,
     anticipatePin: 1,
   }
 });
 
-tl
-  // Blur out hero text, bring in card
-  .to(['#heroText', '.bg-grid'], { scale: 1.12, filter: 'blur(18px)', opacity: 0.15, ease: 'power2.inOut', duration: 2 }, 0)
-  .to('.main-card', { y: 0, ease: 'power3.inOut', duration: 2.2 }, 0)
-
-  // Card expands to full screen
-  .to('.main-card', { width: '100%', height: '100%', borderRadius: '0px', ease: 'power3.inOut', duration: 1.6 })
-
-  // Mockup flies in
-  .fromTo('.mockup-center',
-    { y: 280, z: -400, rotationX: 45, rotationY: -25, autoAlpha: 0, scale: 0.65 },
-    { y: 0, z: 0, rotationX: 0, rotationY: 0, autoAlpha: 1, scale: 1, ease: 'expo.out', duration: 2.5 },
-    '-=0.8'
-  )
-
-  // Widgets appear
-  .fromTo('.phone-widget',
-    { y: 30, autoAlpha: 0, scale: 0.92 },
-    { y: 0, autoAlpha: 1, scale: 1, stagger: 0.12, ease: 'back.out(1.2)', duration: 1.4 },
-    '-=1.4'
-  )
-
-  // Floating badges
-  .fromTo('.float-badge',
-    { y: 80, autoAlpha: 0, scale: 0.75, rotationZ: -8 },
-    { y: 0, autoAlpha: 1, scale: 1, rotationZ: 0, ease: 'back.out(1.5)', duration: 1.4, stagger: 0.25 },
-    '-=1.8'
-  )
-
-  // Left/right text
-  .fromTo('.card-left-text', { x: -45, autoAlpha: 0 }, { x: 0, autoAlpha: 1, ease: 'power4.out', duration: 1.5 }, '-=1.4')
-  .fromTo('.card-right-text', { x: 45, autoAlpha: 0, scale: 0.85 }, { x: 0, autoAlpha: 1, scale: 1, ease: 'expo.out', duration: 1.5 }, '<')
-
-  // Hold
-  .to({}, { duration: 2.8 })
-
-  // Hide hero layer, show CTA
-  .set('#heroText', { autoAlpha: 0 })
-  .set('#ctaLayer', { autoAlpha: 1 })
-  .to({}, { duration: 1.2 })
-
-  // Shrink content out
-  .to(['.mockup-center', '.float-badge', '.card-left-text', '.card-right-text'], {
-    scale: 0.88, y: -35, z: -180, autoAlpha: 0, ease: 'power3.in', duration: 1.1, stagger: 0.05
-  })
-
-  // CTA reveals
-  .to('#ctaLayer', { scale: 1, filter: 'blur(0px)', ease: 'expo.inOut', duration: 1.8 }, 'pullback')
-  .to('.main-card', {
-    width: isMobile ? '93vw' : '84vw',
-    height: isMobile ? '90vh' : '82vh',
-    borderRadius: isMobile ? '28px' : '36px',
-    ease: 'expo.inOut', duration: 1.8
-  }, 'pullback')
-
-  // Card exits up
-  .to('.main-card', { y: -(window.innerHeight + 300), ease: 'power3.in', duration: 1.4 });
+if (isMobile) {
+  // ── MOBILE: simplified, fast, no 3D ──
+  tl
+    .to(['#heroText', '.bg-grid'], { scale: 1.08, filter: 'blur(14px)', opacity: 0.1, ease: 'power2.inOut', duration: 1.5 }, 0)
+    .to('.main-card', { y: 0, ease: 'power3.inOut', duration: 1.5 }, 0)
+    .to('.main-card', { width: '100%', height: '100%', borderRadius: '0px', ease: 'power3.inOut', duration: 1.2 })
+    .fromTo('.mockup-center',
+      { y: 120, autoAlpha: 0, scale: 0.8 },
+      { y: 0, autoAlpha: 1, scale: 1, ease: 'expo.out', duration: 1.8 }, '-=0.6'
+    )
+    .fromTo('.phone-widget',
+      { y: 20, autoAlpha: 0 },
+      { y: 0, autoAlpha: 1, stagger: 0.08, ease: 'power3.out', duration: 1 }, '-=1'
+    )
+    .fromTo('.card-left-text', { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, ease: 'power3.out', duration: 1 }, '-=0.8')
+    .to({}, { duration: holdDur })
+    .set('#heroText', { autoAlpha: 0 })
+    .set('#ctaLayer', { autoAlpha: 1 })
+    .to('#ctaLayer', { scale: 1, filter: 'blur(0px)', ease: 'expo.inOut', duration: 1.2 })
+    .to('.main-card', { width: '93vw', height: '88vh', borderRadius: '24px', ease: 'expo.inOut', duration: 1.2 }, '<')
+    .to('.main-card', { y: -(window.innerHeight + 200), ease: 'power3.in', duration: 1 });
+} else {
+  // ── DESKTOP: full cinematic ──
+  tl
+    .to(['#heroText', '.bg-grid'], { scale: 1.12, filter: 'blur(18px)', opacity: 0.15, ease: 'power2.inOut', duration: 2 }, 0)
+    .to('.main-card', { y: 0, ease: 'power3.inOut', duration: 2.2 }, 0)
+    .to('.main-card', { width: '100%', height: '100%', borderRadius: '0px', ease: 'power3.inOut', duration: 1.6 })
+    .fromTo('.mockup-center',
+      { y: 280, z: -400, rotationX: 45, rotationY: -25, autoAlpha: 0, scale: 0.65 },
+      { y: 0, z: 0, rotationX: 0, rotationY: 0, autoAlpha: 1, scale: 1, ease: 'expo.out', duration: 2.5 }, '-=0.8'
+    )
+    .fromTo('.phone-widget',
+      { y: 30, autoAlpha: 0, scale: 0.92 },
+      { y: 0, autoAlpha: 1, scale: 1, stagger: 0.12, ease: 'back.out(1.2)', duration: 1.4 }, '-=1.4'
+    )
+    .fromTo('.float-badge',
+      { y: 80, autoAlpha: 0, scale: 0.75, rotationZ: -8 },
+      { y: 0, autoAlpha: 1, scale: 1, rotationZ: 0, ease: 'back.out(1.5)', duration: 1.4, stagger: 0.25 }, '-=1.8'
+    )
+    .fromTo('.card-left-text', { x: -45, autoAlpha: 0 }, { x: 0, autoAlpha: 1, ease: 'power4.out', duration: 1.5 }, '-=1.4')
+    .fromTo('.card-right-text', { x: 45, autoAlpha: 0, scale: 0.85 }, { x: 0, autoAlpha: 1, scale: 1, ease: 'expo.out', duration: 1.5 }, '<')
+    .to({}, { duration: holdDur })
+    .set('#heroText', { autoAlpha: 0 })
+    .set('#ctaLayer', { autoAlpha: 1 })
+    .to({}, { duration: 1.2 })
+    .to(['.mockup-center', '.float-badge', '.card-left-text', '.card-right-text'], {
+      scale: 0.88, y: -35, z: -180, autoAlpha: 0, ease: 'power3.in', duration: 1.1, stagger: 0.05
+    })
+    .to('#ctaLayer', { scale: 1, filter: 'blur(0px)', ease: 'expo.inOut', duration: 1.8 }, 'pullback')
+    .to('.main-card', { width: '84vw', height: '82vh', borderRadius: '36px', ease: 'expo.inOut', duration: 1.8 }, 'pullback')
+    .to('.main-card', { y: -(window.innerHeight + 300), ease: 'power3.in', duration: 1.4 });
+}
 
 /* ── REVEAL ON SCROLL ── */
 document.querySelectorAll('.r').forEach(el => {
