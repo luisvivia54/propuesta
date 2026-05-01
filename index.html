@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transformación Digital Escolar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:   #07090f;
+  --navy2:  #0c1120;
+  --navy3:  #111b35;
+  --teal:   oklch(0.63 0.155 193);
+  --teal2:  oklch(0.63 0.155 193 / 0.3);
+  --violet: oklch(0.63 0.155 265);
+  --gold:   oklch(0.78 0.13 82);
+  --white:  oklch(0.98 0.005 240);
+  --muted:  oklch(0.60 0.025 240);
+  --border: oklch(0.28 0.04 240 / 0.5);
+  --card-bg: linear-gradient(145deg,#152864 0%,#090e1c 100%);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--navy);
+  color: var(--white);
+  overflow-x: hidden;
+}
+
+/* ── FILM GRAIN ── */
+.film-grain {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 9999;
+  opacity: 0.04; mix-blend-mode: overlay;
+  background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%25" height="100%25" filter="url(%23n)"/></svg>');
+  animation: grainAnim 0.15s steps(1) infinite;
+}
+@keyframes grainAnim {
+  0%,100%{transform:translate(0,0)}10%{transform:translate(-2%,-3%)}20%{transform:translate(3%,1%)}30%{transform:translate(-1%,4%)}40%{transform:translate(2%,-2%)}50%{transform:translate(-3%,3%)}60%{transform:translate(1%,-4%)}70%{transform:translate(4%,2%)}80%{transform:translate(-2%,1%)}90%{transform:translate(3%,-1%)}
+}
+
+/* ── GRID BG ── */
+.bg-grid {
+  position: absolute; inset: 0; pointer-events: none;
+  background-size: 60px 60px;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+  mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+}
+
+/* ── GSAP HELPERS ── */
+.gsap-hidden { visibility: hidden; }
+.text-clip { clip-path: inset(0 100% 0 0); }
+
+/* ── TEXT EFFECTS ── */
+.text-silver {
+  background: linear-gradient(180deg, #fff 0%, #7a8aaa 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; transform: translateZ(0);
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.6)) drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+.text-glow {
+  color: var(--white);
+  text-shadow: 0 8px 32px rgba(80,140,255,0.15), 0 2px 4px rgba(0,0,0,0.3);
+}
+.text-gradient {
+  background: linear-gradient(135deg, var(--teal), var(--violet));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── DEEP CARD ── */
+.deep-card {
+  background: var(--card-bg);
+  box-shadow:
+    0 60px 120px -20px rgba(0,0,0,0.95),
+    0 20px 40px -10px rgba(0,0,0,0.8),
+    inset 0 1px 2px rgba(255,255,255,0.18),
+    inset 0 -2px 6px rgba(0,0,0,0.9);
+  border: 1px solid rgba(255,255,255,0.04);
+}
+.card-sheen {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 5;
+  background: radial-gradient(700px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,0.07) 0%, transparent 40%);
+  mix-blend-mode: screen; transition: opacity 0.3s;
+}
+
+/* ══ CINEMATIC STAGE ══ */
+#stage {
+  position: relative;
+  width: 100vw; height: 100vh;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Hero text */
+.hero-text-wrap {
+  position: absolute; z-index: 10;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; width: 100vw; padding: 0 2rem;
+  transform-style: preserve-3d;
+}
+.hero-t1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(3rem, 7vw, 7rem);
+  font-weight: 800; line-height: 1.0; letter-spacing: -0.02em;
+}
+.hero-t2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(3rem, 7vw, 7rem);
+  font-weight: 900; line-height: 1.0; letter-spacing: -0.03em;
+}
+
+/* CTA layer */
+.cta-layer {
+  position: absolute; z-index: 10;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; width: 100vw; padding: 0 2rem;
+  visibility: hidden;
+}
+.cta-layer h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(2.2rem, 5vw, 5rem);
+  font-weight: 900; line-height: 1.0;
+  margin-bottom: 1rem; letter-spacing: -0.025em;
+}
+.cta-layer p {
+  color: var(--muted); font-size: 1.1rem;
+  max-width: 480px; line-height: 1.7; margin-bottom: 2.5rem;
+}
+.btn-row { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+.btn-light {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  padding: 0.85rem 2rem; border-radius: 50px;
+  font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem;
+  background: linear-gradient(180deg,#fff 0%,#e8edf5 100%);
+  color: #0d1528; border: none; cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.05),0 4px 12px rgba(0,0,0,0.2),0 16px 32px -4px rgba(0,0,0,0.4),inset 0 1px 1px #fff,inset 0 -2px 4px rgba(0,0,0,0.08);
+  transition: all 0.4s cubic-bezier(0.25,1,0.5,1); text-decoration: none;
+}
+.btn-light:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(0,0,0,0.05),0 8px 20px rgba(0,0,0,0.25),0 24px 48px -6px rgba(0,0,0,0.5),inset 0 1px 1px #fff; }
+.btn-dark {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  padding: 0.85rem 2rem; border-radius: 50px;
+  font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem;
+  background: linear-gradient(180deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.04) 100%);
+  color: #fff; border: 1px solid rgba(255,255,255,0.12); cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5),0 16px 32px -4px rgba(0,0,0,0.8),inset 0 1px 1px rgba(255,255,255,0.15),inset 0 -2px 4px rgba(0,0,0,0.6);
+  transition: all 0.4s cubic-bezier(0.25,1,0.5,1); text-decoration: none;
+}
+.btn-dark:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.2); background: linear-gradient(180deg,rgba(255,255,255,0.15) 0%,rgba(255,255,255,0.06) 100%); }
+
+/* Main card container */
+.card-wrap {
+  position: absolute; z-index: 20;
+  display: flex; align-items: center; justify-content: center;
+  inset: 0; pointer-events: none;
+  perspective: 1500px;
+}
+.main-card {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: auto;
+  width: 88vw; height: 86vh;
+  border-radius: 36px;
+}
+
+/* Card interior layout */
+.card-inner {
+  position: relative; z-index: 10;
+  width: 100%; height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 1fr;
+  align-items: center;
+  padding: 3rem 2.5rem;
+  gap: 2rem;
+}
+@media (max-width:900px) {
+  .card-inner { grid-template-columns:1fr; grid-template-rows:auto 1fr auto; padding:2rem 1.5rem; }
+}
+
+/* Card left */
+.card-left { display:flex; flex-direction:column; justify-content:center; }
+.card-left h3 {
+  font-family:'Outfit',sans-serif; font-size:clamp(1.4rem,2.5vw,2.2rem);
+  font-weight:800; line-height:1.15; margin-bottom:1.2rem;
+  background:linear-gradient(180deg,#fff 0%,#9ba8c0 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text; transform:translateZ(0);
+  filter:drop-shadow(0 8px 24px rgba(0,0,0,0.8));
+}
+.card-left p { font-size:0.88rem; color:rgba(160,175,210,0.75); line-height:1.7; }
+.sol-pill {
+  display:inline-flex; align-items:center; gap:0.5rem;
+  padding:0.4rem 0.9rem; border-radius:50px; font-size:0.72rem;
+  font-weight:700; margin-bottom:1rem; width:fit-content;
+}
+.pill-teal { background:rgba(50,200,200,0.12); border:1px solid rgba(50,200,200,0.25); color:#5de0d8; }
+.pill-violet { background:rgba(130,100,255,0.12); border:1px solid rgba(130,100,255,0.25); color:#a98eff; }
+
+/* Card right */
+.card-right {
+  display:flex; flex-direction:column; gap:0.75rem;
+  justify-content:center;
+}
+.card-right-title {
+  font-family:'Outfit',sans-serif;
+  font-size:clamp(3.5rem,7vw,7.5rem);
+  font-weight:900; line-height:0.9; letter-spacing:-0.04em;
+  background:linear-gradient(180deg,#fff 0%,#5a6a90 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text; transform:translateZ(0);
+  filter:drop-shadow(0 16px 40px rgba(0,0,0,0.9)) drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+}
+
+/* ── DASHBOARD MOCKUP ── */
+.dash-wrap {
+  position:relative; height:100%; max-height:520px;
+  display:flex; align-items:center; justify-content:center;
+  transform-style:preserve-3d;
+}
+.dash-frame {
+  width:100%; max-width:340px;
+  background:linear-gradient(160deg,#0d1830 0%,#060c1a 100%);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:20px; overflow:hidden;
+  box-shadow:0 30px 60px rgba(0,0,0,0.8),inset 0 1px 1px rgba(255,255,255,0.08);
+}
+.dash-topbar {
+  display:flex; align-items:center; gap:0.4rem;
+  padding:0.75rem 1rem; border-bottom:1px solid rgba(255,255,255,0.04);
+  background:rgba(255,255,255,0.02);
+}
+.db { width:8px; height:8px; border-radius:50%; }
+.dash-body { padding:1rem; display:flex; flex-direction:column; gap:0.75rem; }
+.dash-title-bar { font-family:'Outfit',sans-serif; font-size:0.7rem; font-weight:700; color:rgba(150,170,210,0.6); letter-spacing:0.12em; text-transform:uppercase; }
+.dash-row { display:flex; gap:0.6rem; }
+.dash-stat {
+  flex:1; padding:0.75rem; border-radius:10px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.05);
+}
+.dash-stat-val { font-family:'Outfit',sans-serif; font-size:1.5rem; font-weight:800; line-height:1; }
+.dash-stat-lbl { font-size:0.6rem; color:rgba(150,170,210,0.5); margin-top:0.2rem; }
+.dash-bar-section { padding:0.5rem; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid rgba(255,255,255,0.04); }
+.dash-bar-label { font-size:0.6rem; color:rgba(150,170,210,0.5); margin-bottom:0.5rem; }
+.bar-track { height:5px; background:rgba(255,255,255,0.06); border-radius:3px; margin-bottom:0.4rem; overflow:hidden; }
+.bar-fill { height:100%; border-radius:3px; }
+.dash-event {
+  display:flex; align-items:center; gap:0.6rem;
+  padding:0.6rem 0.75rem; border-radius:10px;
+  background:rgba(255,255,255,0.025);
+  border:1px solid rgba(255,255,255,0.04);
+  font-size:0.7rem; color:rgba(160,180,220,0.7);
+}
+.dash-dot2 { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.ai-badge {
+  display:inline-flex; align-items:center; gap:0.4rem;
+  padding:0.35rem 0.75rem; border-radius:50px;
+  background:rgba(120,90,255,0.15); border:1px solid rgba(120,90,255,0.25);
+  font-size:0.62rem; font-weight:700; color:#b49eff;
+}
+
+/* ── FLOATING BADGES ── */
+.float-badge {
+  position:absolute; z-index:30;
+  display:flex; align-items:center; gap:0.75rem;
+  padding:0.75rem 1rem; border-radius:16px;
+  background:linear-gradient(135deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 100%);
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  box-shadow:0 0 0 1px rgba(255,255,255,0.08),0 20px 40px -8px rgba(0,0,0,0.8),inset 0 1px 1px rgba(255,255,255,0.15),inset 0 -1px 1px rgba(0,0,0,0.5);
+  pointer-events:none;
+}
+.float-badge-icon {
+  width:36px; height:36px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.1rem;
+}
+.float-badge p { font-size:0.75rem; font-weight:700; color:#fff; line-height:1.2; }
+.float-badge span { font-size:0.65rem; color:rgba(160,180,220,0.6); }
+
+/* ══ SCROLL SECTIONS ══ */
+.sections-wrap { background: var(--navy); }
+
+section.page-sec {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  padding: 6rem 2rem;
+  position: relative; overflow: hidden;
+}
+
+.sec-container { max-width: 1100px; width: 100%; margin: 0 auto; }
+
+/* Reveal */
+.r {
+  opacity: 0; transform: translateY(36px);
+  transition: opacity 0.85s ease, transform 0.85s ease;
+}
+.r.on { opacity: 1; transform: translateY(0); }
+.r.d1 { transition-delay: 0.12s; }
+.r.d2 { transition-delay: 0.24s; }
+.r.d3 { transition-delay: 0.36s; }
+.r.d4 { transition-delay: 0.48s; }
+
+/* Section labels */
+.sec-label {
+  font-family:'Outfit',sans-serif; font-size:0.68rem; font-weight:700;
+  letter-spacing:0.22em; text-transform:uppercase; color:var(--teal);
+  display:flex; align-items:center; gap:0.6rem; margin-bottom:1rem;
+}
+.sec-label::before { content:''; display:block; width:22px; height:2px; background:var(--teal); }
+.sec-title {
+  font-family:'Outfit',sans-serif;
+  font-size:clamp(2rem,4.5vw,3.8rem);
+  font-weight:900; line-height:1.08; margin-bottom:1rem;
+}
+.sec-title em { font-style:normal; color:var(--teal); }
+.sec-body {
+  font-size:1.05rem; color:var(--muted); max-width:540px;
+  line-height:1.8; margin-bottom:3rem; font-weight:300;
+}
+
+/* Problem grid */
+.pain-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:1.2rem; }
+.pain-card {
+  padding:1.5rem; border-radius:18px;
+  background:rgba(255,255,255,0.025);
+  border:1px solid var(--border);
+  transition:border-color 0.3s,transform 0.3s;
+}
+.pain-card:hover { border-color:var(--teal); transform:translateY(-3px); }
+.pain-icon { font-size:1.8rem; margin-bottom:0.75rem; }
+.pain-card h3 { font-family:'Outfit',sans-serif; font-size:0.95rem; font-weight:700; margin-bottom:0.3rem; }
+.pain-card p { font-size:0.82rem; color:var(--muted); line-height:1.6; }
+
+/* Solution split */
+.sol-split { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+@media(max-width:700px){.sol-split{grid-template-columns:1fr;}}
+.sol-card {
+  padding:2.2rem; border-radius:24px; position:relative; overflow:hidden;
+  background:rgba(255,255,255,0.025);
+  border:1px solid var(--border); transition:transform 0.3s;
+}
+.sol-card:hover { transform:translateY(-4px); }
+.sol-card::before { content:''; position:absolute; top:0;left:0;right:0;height:2px; }
+.sol-card.web::before { background:linear-gradient(90deg,var(--teal),transparent); }
+.sol-card.ai::before { background:linear-gradient(90deg,var(--violet),transparent); }
+.sol-num { font-family:'Outfit',sans-serif; font-size:4rem; font-weight:900; opacity:0.05; position:absolute; top:0.8rem;right:1.2rem; line-height:1; }
+.sol-ico { width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:1.2rem;font-size:1.4rem; }
+.web .sol-ico { background:rgba(50,200,190,0.1); }
+.ai .sol-ico { background:rgba(130,100,255,0.1); }
+.sol-card h3 { font-family:'Outfit',sans-serif;font-size:1.35rem;font-weight:800;margin-bottom:0.65rem; }
+.sol-card p { font-size:0.87rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem; }
+.sol-features { display:flex;flex-direction:column;gap:0.45rem; }
+.sol-feat { display:flex;align-items:center;gap:0.55rem;font-size:0.83rem;color:var(--muted); }
+.sol-feat::before { content:'✓';font-size:0.7rem;font-weight:700;color:var(--teal);flex-shrink:0; }
+.ai .sol-feat::before { color:var(--violet); }
+
+/* Value stats */
+.val-stats { display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin:2.5rem 0; }
+@media(max-width:600px){.val-stats{grid-template-columns:1fr;}}
+.val-stat {
+  padding:2rem 1.5rem; border-radius:20px; text-align:center;
+  background:rgba(255,255,255,0.025); border:1px solid var(--border);
+  transition:border-color 0.3s;
+}
+.val-stat:hover { border-color:var(--teal); }
+.val-num {
+  font-family:'Outfit',sans-serif; font-size:clamp(2.5rem,5vw,4rem);
+  font-weight:900; line-height:1; margin-bottom:0.4rem;
+  background:linear-gradient(135deg,var(--teal),var(--violet));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.val-lbl { font-size:0.82rem;color:var(--muted);line-height:1.5; }
+.val-quote {
+  max-width:660px; margin:0 auto;
+  font-size:1.05rem; color:var(--muted); line-height:1.85;
+  font-style:italic; font-weight:300;
+  padding:1.75rem 2rem; border-left:2px solid var(--teal);
+  background:rgba(255,255,255,0.02); border-radius:0 14px 14px 0;
+}
+.val-quote strong { color:var(--white);font-style:normal;font-weight:600; }
+
+/* Benefits */
+.ben-layout { display:grid;grid-template-columns:1fr 1.3fr;gap:4rem;align-items:center; }
+@media(max-width:768px){.ben-layout{grid-template-columns:1fr;}}
+.ben-list { display:flex;flex-direction:column;gap:0.9rem; }
+.ben-item {
+  display:flex;align-items:flex-start;gap:0.9rem;
+  padding:1.1rem 1.25rem; border-radius:14px;
+  background:rgba(255,255,255,0.025); border:1px solid var(--border);
+  transition:all 0.3s; cursor:default;
+}
+.ben-item:hover { border-color:var(--violet);transform:translateX(4px); }
+.ben-n { font-family:'Outfit',sans-serif;font-size:1.5rem;font-weight:900;color:var(--teal);flex-shrink:0;line-height:1;min-width:2rem; }
+.ben-text h4 { font-family:'Outfit',sans-serif;font-size:0.92rem;font-weight:700;margin-bottom:0.2rem; }
+.ben-text p { font-size:0.78rem;color:var(--muted);line-height:1.5; }
+.ben-visual {
+  height:420px; border-radius:24px; overflow:hidden;
+  background:rgba(255,255,255,0.02); border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* CTA section */
+#contacto { background:radial-gradient(ellipse 70% 50% at 50% 100%,oklch(0.17 0.07 200) 0%,var(--navy) 65%); text-align:center; }
+.cta-badge {
+  display:inline-flex;align-items:center;gap:0.45rem;
+  padding:0.35rem 1rem; border-radius:50px; font-size:0.72rem; font-weight:600;
+  color:var(--teal); background:rgba(50,200,190,0.1); border:1px solid rgba(50,200,190,0.25);
+  margin-bottom:1.75rem;
+}
+.cta-title { font-family:'Outfit',sans-serif;font-size:clamp(2.2rem,5vw,4.5rem);font-weight:900;line-height:1.05;margin-bottom:1.1rem; }
+.cta-sub { color:var(--muted);font-size:1.05rem;margin-bottom:3rem;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.7;font-weight:300; }
+.cta-form { display:flex;flex-direction:column;gap:0.9rem;max-width:460px;margin:0 auto 2rem; }
+.cta-input {
+  width:100%;padding:0.95rem 1.2rem;
+  background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  border-radius:12px;color:var(--white);
+  font-family:'DM Sans',sans-serif;font-size:0.93rem;outline:none;
+  transition:border-color 0.3s,box-shadow 0.3s;
+}
+.cta-input::placeholder{color:var(--muted);}
+.cta-input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(50,200,190,0.15);}
+.cta-submit {
+  width:100%;padding:1rem;
+  background:linear-gradient(135deg,var(--teal),var(--violet));
+  color:#fff;font-family:'Outfit',sans-serif;font-weight:700;
+  font-size:1rem;border:none;border-radius:12px;cursor:pointer;
+  transition:opacity 0.3s,transform 0.3s;letter-spacing:0.02em;
+}
+.cta-submit:hover{opacity:0.88;transform:translateY(-2px);}
+.form-ok {
+  display:flex;flex-direction:column;align-items:center;gap:0.75rem;
+  padding:2rem;background:rgba(50,200,190,0.06);border:1px solid rgba(50,200,190,0.25);
+  border-radius:16px;max-width:460px;margin:0 auto;
+}
+.form-ok-icon{font-size:2.5rem;}
+.form-ok h3{font-family:'Outfit',sans-serif;font-size:1.15rem;font-weight:700;}
+.form-ok p{font-size:0.88rem;color:var(--muted);line-height:1.6;}
+
+/* Nav dots */
+.nav-dots { position:fixed;right:1.75rem;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:9998; }
+.nav-dot { width:7px;height:7px;border-radius:50%;background:var(--border);cursor:pointer;transition:all 0.3s;border:none;padding:0; }
+.nav-dot.on { background:var(--teal);box-shadow:0 0 8px rgba(50,200,190,0.5);transform:scale(1.5); }
+
+footer { padding:1.4rem;text-align:center;font-size:0.72rem;color:var(--muted);border-top:1px solid var(--border);background:var(--navy); }
+</style>
+</head>
+<body>
+
+<div class="film-grain" aria-hidden="true"></div>
+
+<!-- NAV DOTS -->
+<nav class="nav-dots" id="navDots">
+  <button class="nav-dot on" data-id="stage" title="Inicio"></button>
+  <button class="nav-dot" data-id="problema" title="Problema"></button>
+  <button class="nav-dot" data-id="solucion" title="Solución"></button>
+  <button class="nav-dot" data-id="valor" title="Valor"></button>
+  <button class="nav-dot" data-id="beneficios" title="Beneficios"></button>
+  <button class="nav-dot" data-id="contacto" title="Contacto"></button>
+</nav>
+
+<!-- ══════════════════════════════════════
+     CINEMATIC STAGE (GSAP PINNED)
+══════════════════════════════════════ -->
+<div id="stage" data-screen-label="01 Portada">
+
+  <!-- Background grid -->
+  <div class="bg-grid"></div>
+
+  <!-- Subtle radial light -->
+  <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 50% at 50% 40%,rgba(40,90,200,0.08) 0%,transparent 70%);z-index:1;"></div>
+
+  <!-- LAYER 1: Hero text -->
+  <div class="hero-text-wrap" id="heroText">
+    <div class="hero-t1 text-glow gsap-hidden" id="t1">Tu escuela,</div>
+    <div class="hero-t2 text-silver text-clip" id="t2">en la era digital.</div>
+  </div>
+
+  <!-- LAYER 2: CTA (fades in at end) -->
+  <div class="cta-layer" id="ctaLayer">
+    <h2 class="text-silver">Una oportunidad<br><span class="text-gradient">que no se puede ignorar.</span></h2>
+    <p>La transformación digital educativa ya está ocurriendo. Las instituciones que actúan hoy lideran el mañana.</p>
+    <div class="btn-row">
+      <a href="#problema" class="btn-light">Explorar la propuesta ↓</a>
+    </div>
+  </div>
+
+  <!-- LAYER 3: The deep card -->
+  <div class="card-wrap">
+    <div class="main-card deep-card" id="mainCard">
+      <div class="card-sheen" id="cardSheen"></div>
+
+      <!-- CARD INTERIOR -->
+      <div class="card-inner">
+
+        <!-- LEFT: Copy -->
+        <div class="card-left card-left-text">
+          <div class="sol-pill pill-teal">🌐 Sitio Web Institucional</div>
+          <div class="sol-pill pill-violet">🤖 IA Administrativa</div>
+          <h3>Presencia digital.<br>Gestión inteligente.<br>Impacto real.</h3>
+          <p class="r-card">Llevamos tu institución al siguiente nivel: una web profesional que atrae familias y una IA que automatiza la gestión diaria, devolviendo horas valiosas a tu equipo.</p>
+        </div>
+
+        <!-- CENTER: Dashboard mockup -->
+        <div class="dash-wrap mockup-center">
+          <div class="dash-frame">
+            <div class="dash-topbar">
+              <div class="db" style="background:#ff5f57"></div>
+              <div class="db" style="background:#febc2e"></div>
+              <div class="db" style="background:#28c840"></div>
+              <span style="font-size:0.65rem;color:rgba(150,170,210,0.4);margin-left:0.5rem;font-family:'Outfit',sans-serif;font-weight:600;">Panel Institucional</span>
+            </div>
+            <div class="dash-body">
+              <div class="dash-title-bar">Resumen del día</div>
+              <div class="dash-row">
+                <div class="dash-stat">
+                  <div class="dash-stat-val" style="color:#5de0d8">248</div>
+                  <div class="dash-stat-lbl">Alumnos activos</div>
+                </div>
+                <div class="dash-stat">
+                  <div class="dash-stat-val" style="color:#a98eff">94%</div>
+                  <div class="dash-stat-lbl">Asistencia</div>
+                </div>
+              </div>
+              <div class="dash-bar-section">
+                <div class="dash-bar-label">Tareas automatizadas esta semana</div>
+                <div class="bar-track"><div class="bar-fill" style="width:82%;background:var(--teal)"></div></div>
+                <div class="bar-track"><div class="bar-fill" style="width:67%;background:var(--violet)"></div></div>
+                <div class="bar-track"><div class="bar-fill" style="width:91%;background:var(--gold)"></div></div>
+              </div>
+              <div class="dash-event phone-widget">
+                <div class="dash-dot2" style="background:#5de0d8"></div>
+                Comunicados enviados: <strong style="color:#fff">34</strong>
+              </div>
+              <div class="dash-event phone-widget">
+                <div class="ai-badge">✦ IA</div>
+                Respondió 27 consultas de padres hoy
+              </div>
+              <div class="dash-event phone-widget">
+                <div class="dash-dot2" style="background:var(--gold)"></div>
+                Nuevas inscripciones en línea: <strong style="color:#fff">12</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floating badges -->
+          <div class="float-badge phone-widget" style="top:-10px;left:-60px;">
+            <div class="float-badge-icon" style="background:rgba(50,200,190,0.15);">🔔</div>
+            <div>
+              <p>Alerta enviada</p>
+              <span>3 inasistencias detectadas</span>
+            </div>
+          </div>
+          <div class="float-badge phone-widget" style="bottom:10px;right:-50px;">
+            <div class="float-badge-icon" style="background:rgba(130,100,255,0.15);">🤖</div>
+            <div>
+              <p>IA activa 24/7</p>
+              <span>Última resp. hace 2 min</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Brand word -->
+        <div class="card-right-text" style="display:flex;justify-content:flex-end;align-items:center;">
+          <div class="card-right-title">DIGITAL</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /stage -->
+
+<!-- ══════════════════════════════════════
+     SCROLL SECTIONS
+══════════════════════════════════════ -->
+<div class="sections-wrap">
+
+  <!-- PROBLEMA -->
+  <section class="page-sec" id="problema" data-screen-label="02 El Problema">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,var(--navy) 0%,#0c1120 100%);pointer-events:none;"></div>
+    <div class="sec-container" style="position:relative;z-index:1;">
+      <div class="sec-label r">El Problema</div>
+      <h2 class="sec-title r d1">Las escuelas sin digitalización<br><em>pierden tiempo, familias y recursos</em></h2>
+      <p class="sec-body r d2">En un mundo 100% conectado, una institución sin presencia digital ni automatización está en desventaja competitiva y operativa. Los problemas son reales y acumulativos.</p>
+      <div class="pain-grid">
+        <div class="pain-card r d1">
+          <div class="pain-icon">📋</div>
+          <h3>Papeleo interminable</h3>
+          <p>Horas perdidas en trámites manuales que podrían automatizarse en segundos con las herramientas correctas.</p>
+        </div>
+        <div class="pain-card r d2">
+          <div class="pain-icon">📞</div>
+          <h3>Comunicación fragmentada</h3>
+          <p>Sin un canal digital oficial, los mensajes a padres y alumnos llegan tarde o simplemente no llegan.</p>
+        </div>
+        <div class="pain-card r d3">
+          <div class="pain-icon">🔍</div>
+          <h3>Invisibilidad en internet</h3>
+          <p>Familias que buscan escuela en Google no te encuentran. Cada búsqueda sin resultado es un alumno perdido.</p>
+        </div>
+        <div class="pain-card r d4">
+          <div class="pain-icon">📊</div>
+          <h3>Cero datos accionables</h3>
+          <p>Sin sistemas digitales es imposible saber qué alumnos necesitan apoyo o cómo mejorar el rendimiento.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOLUCIÓN -->
+  <section class="page-sec" id="solucion" data-screen-label="03 Solución" style="background:radial-gradient(ellipse 60% 50% at 50% 50%,#0f1e40 0%,var(--navy) 100%);">
+    <div class="sec-container">
+      <div class="sec-label r">La Solución</div>
+      <h2 class="sec-title r d1">Dos pilares que <em>transforman</em><br>tu institución</h2>
+      <p class="sec-body r d2">Una estrategia integral diseñada para el entorno educativo: presencia digital profesional más automatización inteligente.</p>
+      <div class="sol-split">
+        <div class="sol-card web r d2">
+          <div class="sol-num">01</div>
+          <div class="sol-ico">🌐</div>
+          <h3>Página Web Institucional</h3>
+          <p>Un sitio web moderno que comunica los valores de tu escuela, atrae nuevas familias y centraliza toda la información clave.</p>
+          <div class="sol-features">
+            <div class="sol-feat">Diseño responsive y accesible</div>
+            <div class="sol-feat">Portal de noticias y eventos</div>
+            <div class="sol-feat">Formulario de inscripciones en línea</div>
+            <div class="sol-feat">Posicionamiento en Google (SEO)</div>
+            <div class="sol-feat">Panel de administración simple</div>
+          </div>
+        </div>
+        <div class="sol-card ai r d3">
+          <div class="sol-num">02</div>
+          <div class="sol-ico">🤖</div>
+          <h3>IA para Administración</h3>
+          <p>Inteligencia artificial que automatiza tareas repetitivas, responde dudas de padres y genera reportes instantáneos.</p>
+          <div class="sol-features">
+            <div class="sol-feat">Asistente virtual para padres 24/7</div>
+            <div class="sol-feat">Automatización de comunicados</div>
+            <div class="sol-feat">Reportes de asistencia y calificaciones</div>
+            <div class="sol-feat">Alertas automáticas de inasistencias</div>
+            <div class="sol-feat">Dashboard de métricas institucionales</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VALOR -->
+  <section class="page-sec" id="valor" data-screen-label="04 Valor" style="background:linear-gradient(180deg,var(--navy) 0%,#111b35 100%);text-align:center;">
+    <div class="sec-container">
+      <div class="sec-label r" style="justify-content:center;">El Valor</div>
+      <h2 class="sec-title r d1">Impacto medible desde el <span class="text-gradient">primer mes</span></h2>
+      <div class="val-stats">
+        <div class="val-stat r d1"><div class="val-num">70%</div><div class="val-lbl">Reducción en tareas administrativas repetitivas</div></div>
+        <div class="val-stat r d2"><div class="val-num">3×</div><div class="val-lbl">Más consultas de nuevas familias vía web</div></div>
+        <div class="val-stat r d3"><div class="val-num">24/7</div><div class="val-lbl">Disponibilidad del asistente para padres</div></div>
+      </div>
+      <div class="val-quote r d2">
+        <strong>"Las escuelas que se digitalizan hoy no solo se vuelven más eficientes:</strong> se convierten en la primera opción de las familias que buscan una institución comprometida con el futuro de sus hijos."
+      </div>
+    </div>
+  </section>
+
+  <!-- BENEFICIOS -->
+  <section class="page-sec" id="beneficios" data-screen-label="05 Beneficios" style="background:radial-gradient(ellipse 65% 50% at 75% 50%,#14123a 0%,var(--navy) 100%);">
+    <div class="sec-container">
+      <div class="ben-layout">
+        <div>
+          <div class="sec-label r">Beneficios Concretos</div>
+          <h2 class="sec-title r d1">Lo que gana tu<br><em>institución</em></h2>
+          <div class="ben-list">
+            <div class="ben-item r d1"><div class="ben-n">01</div><div class="ben-text"><h4>Tiempo devuelto al equipo</h4><p>Directores y administrativos recuperan horas para lo pedagógico.</p></div></div>
+            <div class="ben-item r d2"><div class="ben-n">02</div><div class="ben-text"><h4>Reputación e imagen profesional</h4><p>Una presencia digital cuidada genera confianza inmediata en familias.</p></div></div>
+            <div class="ben-item r d3"><div class="ben-n">03</div><div class="ben-text"><h4>Captación de nuevos alumnos</h4><p>Aparece en Google y convierte visitantes en inscripciones reales.</p></div></div>
+            <div class="ben-item r d4"><div class="ben-n">04</div><div class="ben-text"><h4>Comunicación en tiempo real</h4><p>Padres siempre informados, sin papeles, sin llamadas, sin demoras.</p></div></div>
+          </div>
+        </div>
+        <div class="ben-visual r d2">
+          <!-- mini dashboard -->
+          <div style="width:85%;display:flex;flex-direction:column;gap:0.8rem;">
+            <div style="font-family:'Outfit',sans-serif;font-size:0.7rem;font-weight:700;color:rgba(150,170,210,0.5);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.3rem;">Vista semanal</div>
+            <div style="display:flex;gap:0.75rem;">
+              <div style="flex:1;padding:1rem;border-radius:12px;background:rgba(50,200,190,0.08);border:1px solid rgba(50,200,190,0.15);">
+                <div style="font-family:'Outfit',sans-serif;font-size:2rem;font-weight:900;color:#5de0d8;line-height:1;">87%</div>
+                <div style="font-size:0.65rem;color:var(--muted);margin-top:0.2rem;">Tareas auto.</div>
+              </div>
+              <div style="flex:1;padding:1rem;border-radius:12px;background:rgba(130,100,255,0.08);border:1px solid rgba(130,100,255,0.15);">
+                <div style="font-family:'Outfit',sans-serif;font-size:2rem;font-weight:900;color:#a98eff;line-height:1;">142</div>
+                <div style="font-size:0.65rem;color:var(--muted);margin-top:0.2rem;">Msgs IA resueltos</div>
+              </div>
+            </div>
+            <div style="padding:1rem;border-radius:12px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);">
+              <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.7rem;letter-spacing:0.1em;text-transform:uppercase;">Actividad diaria</div>
+              <div style="display:flex;gap:4px;align-items:flex-end;height:60px;">
+                <div style="flex:1;background:rgba(50,200,190,0.3);border-radius:4px 4px 0 0;height:40%;"></div>
+                <div style="flex:1;background:rgba(50,200,190,0.4);border-radius:4px 4px 0 0;height:65%;"></div>
+                <div style="flex:1;background:rgba(50,200,190,0.5);border-radius:4px 4px 0 0;height:50%;"></div>
+                <div style="flex:1;background:rgba(50,200,190,0.6);border-radius:4px 4px 0 0;height:80%;"></div>
+                <div style="flex:1;background:rgba(50,200,190,0.7);border-radius:4px 4px 0 0;height:70%;"></div>
+                <div style="flex:1;background:var(--teal);border-radius:4px 4px 0 0;height:100%;box-shadow:0 0 12px rgba(50,200,190,0.4);"></div>
+                <div style="flex:1;background:rgba(50,200,190,0.4);border-radius:4px 4px 0 0;height:55%;"></div>
+              </div>
+            </div>
+            <div style="padding:0.75rem 1rem;border-radius:12px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:0.75rem;">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--teal);flex-shrink:0;box-shadow:0 0 8px rgba(50,200,190,0.6);"></div>
+              <span style="font-size:0.75rem;color:rgba(160,180,220,0.7);">Nuevo alumno inscrito vía web — <strong style="color:#fff">hace 4 min</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CIERRE -->
+  <section class="page-sec" id="contacto" data-screen-label="06 Cierre" style="background:radial-gradient(ellipse 70% 50% at 50% 100%,oklch(0.17 0.07 200) 0%,var(--navy) 65%);text-align:center;">
+    <div class="sec-container" style="position:relative;z-index:1;">
+      <div class="cta-badge r">✦ Transformación Digital Educativa</div>
+      <h2 class="cta-title r d1">El momento de<br><span class="text-gradient">actuar es ahora.</span></h2>
+      <p class="cta-sub r d2">Las escuelas que se digitalizan hoy no solo se vuelven más eficientes — se convierten en la primera opción de las familias que buscan el mejor futuro para sus hijos.</p>
+      <div class="r d3" style="display:flex;justify-content:center;gap:3.5rem;flex-wrap:wrap;margin-top:0.5rem;">
+        <div style="text-align:center;">
+          <div style="font-family:'Outfit',sans-serif;font-size:3.5rem;font-weight:900;background:linear-gradient(135deg,var(--teal),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;">70%</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem;max-width:140px;">Menos tiempo en tareas administrativas</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:'Outfit',sans-serif;font-size:3.5rem;font-weight:900;background:linear-gradient(135deg,var(--teal),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;">3×</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem;max-width:140px;">Más consultas de familias vía web</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:'Outfit',sans-serif;font-size:3.5rem;font-weight:900;background:linear-gradient(135deg,var(--teal),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;">24/7</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem;max-width:140px;">IA disponible para padres y equipo</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /sections-wrap -->
+
+<footer>© 2026 · Transformación Digital Educativa · Todos los derechos reservados</footer>
+
+<!-- ══ TWEAKS PANEL ══ -->
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentColor": "teal",
+  "clientName": "Tu Institución"
+}/*EDITMODE-END*/;
+
+function TweaksApp() {
+  const [tweaks, setTweak] = window.useTweaks(TWEAK_DEFAULTS);
+
+  React.useEffect(() => {
+    const colors = {
+      teal:   ['oklch(0.63 0.155 193)', 'oklch(0.63 0.155 193 / 0.3)'],
+      violet: ['oklch(0.63 0.155 265)', 'oklch(0.63 0.155 265 / 0.3)'],
+      gold:   ['oklch(0.72 0.13 82)',   'oklch(0.72 0.13 82 / 0.3)'],
+    };
+    const [c, cg] = colors[tweaks.accentColor] || colors.teal;
+    document.documentElement.style.setProperty('--teal', c);
+    document.documentElement.style.setProperty('--teal2', cg);
+  }, [tweaks.accentColor]);
+
+  return (
+    <window.TweaksPanel title="Tweaks">
+      <window.TweakSection label="Color de acento">
+        <window.TweakRadio
+          id="accentColor"
+          options={["teal","violet","gold"]}
+          labels={["Teal","Violeta","Dorado"]}
+          value={tweaks.accentColor}
+          onChange={v => setTweak('accentColor', v)}
+        />
+      </window.TweakSection>
+      <window.TweakSection label="Nombre del cliente">
+        <window.TweakText
+          id="clientName"
+          value={tweaks.clientName}
+          onChange={v => setTweak('clientName', v)}
+        />
+      </window.TweakSection>
+    </window.TweaksPanel>
+  );
+}
+const tw = document.createElement('div');
+document.body.appendChild(tw);
+ReactDOM.createRoot(tw).render(<TweaksApp />);
+</script>
+
+<!-- ══ GSAP ANIMATIONS ══ -->
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ── MOUSE PARALLAX ON CARD ── */
+const mainCard = document.getElementById('mainCard');
+const cardSheen = document.getElementById('cardSheen');
+const mockupCenter = document.querySelector('.mockup-center');
+let rafId = 0;
+
+window.addEventListener('mousemove', (e) => {
+  cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(() => {
+    const rect = mainCard.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    mainCard.style.setProperty('--mx', mx + 'px');
+    mainCard.style.setProperty('--my', my + 'px');
+
+    const xv = (e.clientX / window.innerWidth - 0.5) * 2;
+    const yv = (e.clientY / window.innerHeight - 0.5) * 2;
+    if (mockupCenter) {
+      gsap.to(mockupCenter, { rotationY: xv * 10, rotationX: -yv * 8, ease: 'power3.out', duration: 1.2 });
+    }
+  });
+});
+
+/* ── INTRO ANIMATION ── */
+gsap.set('#t1', { autoAlpha: 0, y: 60, scale: 0.88, filter: 'blur(18px)', rotationX: -20 });
+gsap.set('#t2', { clipPath: 'inset(0 100% 0 0)' });
+gsap.set('.main-card', { y: window.innerHeight + 200, autoAlpha: 1 });
+gsap.set(['.card-left-text', '.card-right-text', '.mockup-center', '.float-badge', '.phone-widget'], { autoAlpha: 0 });
+gsap.set('#ctaLayer', { autoAlpha: 0, scale: 0.85, filter: 'blur(28px)' });
+
+const intro = gsap.timeline({ delay: 0.4 });
+intro
+  .to('#t1', { duration: 1.8, autoAlpha: 1, y: 0, scale: 1, filter: 'blur(0px)', rotationX: 0, ease: 'expo.out' })
+  .to('#t2', { duration: 1.4, clipPath: 'inset(0 0% 0 0)', ease: 'power4.inOut' }, '-=1.1');
+
+/* ── PINNED SCROLL TIMELINE ── */
+const isMobile = window.innerWidth < 768;
+
+const tl = gsap.timeline({
+  scrollTrigger: {
+    trigger: '#stage',
+    start: 'top top',
+    end: '+=6500',
+    pin: true,
+    scrub: 1.1,
+    anticipatePin: 1,
+  }
+});
+
+tl
+  // Blur out hero text, bring in card
+  .to(['#heroText', '.bg-grid'], { scale: 1.12, filter: 'blur(18px)', opacity: 0.15, ease: 'power2.inOut', duration: 2 }, 0)
+  .to('.main-card', { y: 0, ease: 'power3.inOut', duration: 2.2 }, 0)
+
+  // Card expands to full screen
+  .to('.main-card', { width: '100%', height: '100%', borderRadius: '0px', ease: 'power3.inOut', duration: 1.6 })
+
+  // Mockup flies in
+  .fromTo('.mockup-center',
+    { y: 280, z: -400, rotationX: 45, rotationY: -25, autoAlpha: 0, scale: 0.65 },
+    { y: 0, z: 0, rotationX: 0, rotationY: 0, autoAlpha: 1, scale: 1, ease: 'expo.out', duration: 2.5 },
+    '-=0.8'
+  )
+
+  // Widgets appear
+  .fromTo('.phone-widget',
+    { y: 30, autoAlpha: 0, scale: 0.92 },
+    { y: 0, autoAlpha: 1, scale: 1, stagger: 0.12, ease: 'back.out(1.2)', duration: 1.4 },
+    '-=1.4'
+  )
+
+  // Floating badges
+  .fromTo('.float-badge',
+    { y: 80, autoAlpha: 0, scale: 0.75, rotationZ: -8 },
+    { y: 0, autoAlpha: 1, scale: 1, rotationZ: 0, ease: 'back.out(1.5)', duration: 1.4, stagger: 0.25 },
+    '-=1.8'
+  )
+
+  // Left/right text
+  .fromTo('.card-left-text', { x: -45, autoAlpha: 0 }, { x: 0, autoAlpha: 1, ease: 'power4.out', duration: 1.5 }, '-=1.4')
+  .fromTo('.card-right-text', { x: 45, autoAlpha: 0, scale: 0.85 }, { x: 0, autoAlpha: 1, scale: 1, ease: 'expo.out', duration: 1.5 }, '<')
+
+  // Hold
+  .to({}, { duration: 2.8 })
+
+  // Hide hero layer, show CTA
+  .set('#heroText', { autoAlpha: 0 })
+  .set('#ctaLayer', { autoAlpha: 1 })
+  .to({}, { duration: 1.2 })
+
+  // Shrink content out
+  .to(['.mockup-center', '.float-badge', '.card-left-text', '.card-right-text'], {
+    scale: 0.88, y: -35, z: -180, autoAlpha: 0, ease: 'power3.in', duration: 1.1, stagger: 0.05
+  })
+
+  // CTA reveals
+  .to('#ctaLayer', { scale: 1, filter: 'blur(0px)', ease: 'expo.inOut', duration: 1.8 }, 'pullback')
+  .to('.main-card', {
+    width: isMobile ? '93vw' : '84vw',
+    height: isMobile ? '90vh' : '82vh',
+    borderRadius: isMobile ? '28px' : '36px',
+    ease: 'expo.inOut', duration: 1.8
+  }, 'pullback')
+
+  // Card exits up
+  .to('.main-card', { y: -(window.innerHeight + 300), ease: 'power3.in', duration: 1.4 });
+
+/* ── REVEAL ON SCROLL ── */
+document.querySelectorAll('.r').forEach(el => {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { el.classList.add('on'); obs.disconnect(); } });
+  }, { threshold: 0.12 });
+  obs.observe(el);
+});
+
+/* ── NAV DOTS ── */
+const allSecs = ['stage', 'problema', 'solucion', 'valor', 'beneficios', 'contacto'];
+const dots = document.querySelectorAll('.nav-dot');
+
+dots.forEach((d, i) => {
+  d.addEventListener('click', () => {
+    const el = document.getElementById(allSecs[i]);
+    if (el) window.scrollTo({ top: el.offsetTop, behavior: 'smooth' });
+  });
+});
+
+function updateDots() {
+  const scrollY = window.scrollY + window.innerHeight * 0.4;
+  let cur = 0;
+  allSecs.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el && scrollY >= el.offsetTop) cur = i;
+  });
+  dots.forEach((d, i) => d.classList.toggle('on', i === cur));
+}
+window.addEventListener('scroll', updateDots, { passive: true });
+
+
+</script>
+
+</body>
+</html>

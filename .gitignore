@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode
+.idea
+.fleet
+
+# Logs
+*.log
+logs
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Dependencias (por si más adelante agregas build tools)
+node_modules
+dist
+.cache
