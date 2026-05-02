@@ -49,6 +49,14 @@ body {
 @keyframes grainAnim {
   0%,100%{transform:translate(0,0)}10%{transform:translate(-2%,-3%)}20%{transform:translate(3%,1%)}30%{transform:translate(-1%,4%)}40%{transform:translate(2%,-2%)}50%{transform:translate(-3%,3%)}60%{transform:translate(1%,-4%)}70%{transform:translate(4%,2%)}80%{transform:translate(-2%,1%)}90%{transform:translate(3%,-1%)}
 }
+/* Desactiva grano animado en móvil — ahorra GPU */
+@media (max-width: 768px) {
+  .film-grain { animation: none; opacity: 0.025; }
+}
+/* Respeta usuarios que prefieren menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .film-grain { animation: none; }
+}
 
 /* ── GRID BG ── */
 .bg-grid {
@@ -825,46 +833,67 @@ ReactDOM.createRoot(tw).render(<TweaksApp />);
 <script>
 gsap.registerPlugin(ScrollTrigger);
 
-/* ── MOUSE PARALLAX ON CARD ── */
+/* ── MOUSE PARALLAX ON CARD (solo desktop / con puntero fino) ── */
 const mainCard = document.getElementById('mainCard');
 const cardSheen = document.getElementById('cardSheen');
 const mockupCenter = document.querySelector('.mockup-center');
 let rafId = 0;
+const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-window.addEventListener('mousemove', (e) => {
-  cancelAnimationFrame(rafId);
-  rafId = requestAnimationFrame(() => {
-    const rect = mainCard.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    mainCard.style.setProperty('--mx', mx + 'px');
-    mainCard.style.setProperty('--my', my + 'px');
+if (supportsHover) {
+  window.addEventListener('mousemove', (e) => {
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      const rect = mainCard.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      mainCard.style.setProperty('--mx', mx + 'px');
+      mainCard.style.setProperty('--my', my + 'px');
 
-    const xv = (e.clientX / window.innerWidth - 0.5) * 2;
-    const yv = (e.clientY / window.innerHeight - 0.5) * 2;
-    if (mockupCenter) {
-      gsap.to(mockupCenter, { rotationY: xv * 10, rotationX: -yv * 8, ease: 'power3.out', duration: 1.2 });
-    }
+      const xv = (e.clientX / window.innerWidth - 0.5) * 2;
+      const yv = (e.clientY / window.innerHeight - 0.5) * 2;
+      if (mockupCenter) {
+        gsap.to(mockupCenter, { rotationY: xv * 10, rotationX: -yv * 8, ease: 'power3.out', duration: 1.2 });
+      }
+    });
   });
-});
+}
 
 /* ── INTRO ANIMATION ── */
-gsap.set('#t1', { autoAlpha: 0, y: 60, scale: 0.88, filter: 'blur(18px)', rotationX: -20 });
+const _isMobileInit = window.innerWidth < 768;
+gsap.set('#t1', {
+  autoAlpha: 0, y: 60, scale: 0.88,
+  filter: _isMobileInit ? 'blur(8px)' : 'blur(18px)',
+  rotationX: _isMobileInit ? 0 : -20
+});
 gsap.set('#t2', { clipPath: 'inset(0 100% 0 0)' });
 gsap.set('.main-card', { y: window.innerHeight + 200, autoAlpha: 1 });
 gsap.set(['.card-left-text', '.card-right-text', '.mockup-center', '.float-badge', '.phone-widget'], { autoAlpha: 0 });
-gsap.set('#ctaLayer', { autoAlpha: 0, scale: 0.85, filter: 'blur(28px)' });
+gsap.set('#ctaLayer', {
+  autoAlpha: 0,
+  scale: _isMobileInit ? 0.92 : 0.85,
+  filter: _isMobileInit ? 'blur(10px)' : 'blur(28px)'
+});
 
-const intro = gsap.timeline({ delay: 0.4 });
+const intro = gsap.timeline({ delay: _isMobileInit ? 0.15 : 0.4 });
 intro
-  .to('#t1', { duration: 1.8, autoAlpha: 1, y: 0, scale: 1, filter: 'blur(0px)', rotationX: 0, ease: 'expo.out' })
-  .to('#t2', { duration: 1.4, clipPath: 'inset(0 0% 0 0)', ease: 'power4.inOut' }, '-=1.1');
+  .to('#t1', {
+    duration: _isMobileInit ? 0.9 : 1.8,
+    autoAlpha: 1, y: 0, scale: 1, filter: 'blur(0px)', rotationX: 0,
+    ease: _isMobileInit ? 'power3.out' : 'expo.out'
+  })
+  .to('#t2', {
+    duration: _isMobileInit ? 0.7 : 1.4,
+    clipPath: 'inset(0 0% 0 0)',
+    ease: _isMobileInit ? 'power3.out' : 'power4.inOut'
+  }, _isMobileInit ? '-=0.55' : '-=1.1');
 
 /* ── PINNED SCROLL TIMELINE ── */
 const isMobile = window.innerWidth < 768;
-const scrollDist = isMobile ? 2800 : 6500;
-const holdDur   = isMobile ? 0.8  : 2.8;
-const scrubVal  = isMobile ? 0.7  : 1.1;
+// Móvil: distancias y scrub más cortos = animación más ágil y responsiva al dedo
+const scrollDist = isMobile ? 1500 : 6500;
+const holdDur   = isMobile ? 0.3  : 2.8;
+const scrubVal  = isMobile ? 0.35 : 1.1;
 
 const tl = gsap.timeline({
   scrollTrigger: {
@@ -878,26 +907,26 @@ const tl = gsap.timeline({
 });
 
 if (isMobile) {
-  // ── MOBILE: simplified, fast, no 3D ──
+  // ── MOBILE: simplified, fast, no 3D, blur reducido ──
   tl
-    .to(['#heroText', '.bg-grid'], { scale: 1.08, filter: 'blur(14px)', opacity: 0.1, ease: 'power2.inOut', duration: 1.5 }, 0)
-    .to('.main-card', { y: 0, ease: 'power3.inOut', duration: 1.5 }, 0)
-    .to('.main-card', { width: '100%', height: '100%', borderRadius: '0px', ease: 'power3.inOut', duration: 1.2 })
+    .to(['#heroText', '.bg-grid'], { scale: 1.05, opacity: 0.1, ease: 'power2.inOut', duration: 0.8 }, 0)
+    .to('.main-card', { y: 0, ease: 'power3.out', duration: 0.9 }, 0)
+    .to('.main-card', { width: '100%', height: '100%', borderRadius: '0px', ease: 'power3.inOut', duration: 0.7 })
     .fromTo('.mockup-center',
-      { y: 120, autoAlpha: 0, scale: 0.8 },
-      { y: 0, autoAlpha: 1, scale: 1, ease: 'expo.out', duration: 1.8 }, '-=0.6'
+      { y: 80, autoAlpha: 0, scale: 0.85 },
+      { y: 0, autoAlpha: 1, scale: 1, ease: 'power3.out', duration: 0.9 }, '-=0.4'
     )
     .fromTo('.phone-widget',
-      { y: 20, autoAlpha: 0 },
-      { y: 0, autoAlpha: 1, stagger: 0.08, ease: 'power3.out', duration: 1 }, '-=1'
+      { y: 15, autoAlpha: 0 },
+      { y: 0, autoAlpha: 1, stagger: 0.05, ease: 'power2.out', duration: 0.5 }, '-=0.6'
     )
-    .fromTo('.card-left-text', { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, ease: 'power3.out', duration: 1 }, '-=0.8')
+    .fromTo('.card-left-text', { y: 20, autoAlpha: 0 }, { y: 0, autoAlpha: 1, ease: 'power2.out', duration: 0.5 }, '-=0.5')
     .to({}, { duration: holdDur })
     .set('#heroText', { autoAlpha: 0 })
     .set('#ctaLayer', { autoAlpha: 1 })
-    .to('#ctaLayer', { scale: 1, filter: 'blur(0px)', ease: 'expo.inOut', duration: 1.2 })
-    .to('.main-card', { width: '93vw', height: '88vh', borderRadius: '24px', ease: 'expo.inOut', duration: 1.2 }, '<')
-    .to('.main-card', { y: -(window.innerHeight + 200), ease: 'power3.in', duration: 1 });
+    .to('#ctaLayer', { scale: 1, filter: 'blur(0px)', ease: 'power3.out', duration: 0.7 })
+    .to('.main-card', { width: '93vw', height: '88vh', borderRadius: '24px', ease: 'power3.out', duration: 0.7 }, '<')
+    .to('.main-card', { y: -(window.innerHeight + 200), ease: 'power3.in', duration: 0.6 });
 } else {
   // ── DESKTOP: full cinematic ──
   tl
